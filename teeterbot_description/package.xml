@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>teeterbot_description</name>
+  <version>0.0.0</version>
+  <description>
+    URDF configuration of teeterbot
+  </description>
+  <maintainer email="mradov@gmail.com">Micho Radovnikovich</maintainer>
+
+  <license>BSD2</license>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>hector_gazebo_plugins</exec_depend>
+
+  <export>
+  </export>
+</package>

@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- Name and spawn pose -->
+  <arg name="robot_name" default="teeterbot" />
+  <arg name="start_x" default="0.0" />
+  <arg name="start_y" default="0.0" />
+  <arg name="start_z" default="0.2" />
+  <arg name="start_yaw" default="0.0" />
+
+  <!-- Physical properties -->
+  <arg name="body_length" default="0.8" />
+  <arg name="body_width" default="0.3" />
+  <arg name="body_depth" default="0.3" />
+  <arg name="body_mass" default="10.0" />
+  <arg name="wheel_mass" default="1.0" />
+  <arg name="wheel_radius" default="0.2" />
+  <arg name="training_wheels" default="false" />
+
+  <!-- Simulation behavior settings -->
+  <arg name="pub_ground_truth" default="false" />
+  <arg name="auto_reset_orientation" default="false" />
+  <arg name="auto_reset_delay" default="2.0" />
+
+  <group ns="$(arg robot_name)" >
+    <!-- Translate launch arg true/false to integer 1/0 for SDF -->
+    <arg     if="$(arg pub_ground_truth)" name="ground_truth_arg" value="pub_ground_truth:=1" />
+    <arg unless="$(arg pub_ground_truth)" name="ground_truth_arg" value="pub_ground_truth:=0" />
+    <arg     if="$(arg auto_reset_orientation)" name="auto_reset_arg" value="auto_reset_orientation:=1" />
+    <arg unless="$(arg auto_reset_orientation)" name="auto_reset_arg" value="auto_reset_orientation:=0" />
+
+    <!-- Parse URDF file with specified arguments -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find teeterbot_description)/urdf/teeterbot.urdf.xacro' robot_name:=$(arg robot_name) training_wheels:=$(arg training_wheels) body_length:=$(arg body_length) $(arg ground_truth_arg) $(arg auto_reset_arg) auto_reset_delay:=$(arg auto_reset_delay) --inorder" />
+
+    <!-- Pass parsed URDF to Gazebo model spawning service -->
+    <node pkg="gazebo_ros" type="spawn_model"  name="spawn_$(arg robot_name)" args="-urdf -param robot_description -model $(arg robot_name) -x $(arg start_x) -y $(arg start_y) -z $(arg start_z) -Y $(arg start_yaw)"/>
+
+    <!-- Publish TF frames within URDF model -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" value="50.0" />
+    </node>
+  </group>
+
+</launch>

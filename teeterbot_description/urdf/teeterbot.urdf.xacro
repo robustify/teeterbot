@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+<robot name="teeterbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find teeterbot_description)/urdf/teeterbot_friction.urdf"/>
+
+  <xacro:arg name="pub_ground_truth" default="0" />
+  <xacro:arg name="auto_reset_orientation" default="0" />
+  <xacro:arg name="auto_reset_delay" default="2.0" />
+
+  <xacro:arg name="wheel_mass" default="1.0" />
+  <xacro:arg name="wheel_radius" default="0.2" />
+  <xacro:arg name="body_mass" default="10.0" />
+  <xacro:arg name="body_width" default="0.3" />
+  <xacro:arg name="body_depth" default="0.3" />
+  <xacro:arg name="body_length" default="0.8" />
+  <xacro:arg name="training_wheels" default="true" />
+
+  <xacro:property name="wheel_mass" value="$(arg wheel_mass)" />
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)" />
+  <xacro:property name="wheel_thickness" value="0.1" />
+  <xacro:property name="wheelbase" value="${0.2 + body_width}" />
+
+  <xacro:property name="body_mass" value="$(arg body_mass)" />
+  <xacro:property name="body_width" value="$(arg body_width)" />
+  <xacro:property name="body_depth" value="$(arg body_depth)" />
+  <xacro:property name="body_length" value="$(arg body_length)" />
+  <xacro:property name="body_com_height" value="${wheel_radius + body_length/2}" />
+
+  <gazebo>
+    <plugin name="controller_interface" filename="libteeterbot_controller_interface.so">
+      <pubGroundTruth>$(arg pub_ground_truth)</pubGroundTruth>
+      <autoResetOrientation>$(arg auto_reset_orientation)</autoResetOrientation>
+      <autoResetDelay>$(arg auto_reset_delay)</autoResetDelay>
+    </plugin>
+    <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+      <robotNamespace>$(arg robot_name)</robotNamespace>
+      <jointName>
+          left_wheel, right_wheel
+      </jointName>
+      <updateRate>100</updateRate>
+      <alwaysOn>true</alwaysOn>
+    </plugin>
+  </gazebo>
+
+  <xacro:macro name="wheel" params="name y_offset" >
+    <link name="${name}" >
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="${wheel_mass}"/>
+        <inertia ixx="${wheel_mass/12*(3*wheel_radius*wheel_radius + wheel_thickness*wheel_thickness)}" ixy="0" ixz="0" iyy="${wheel_mass/12*(3*wheel_radius*wheel_radius + wheel_thickness*wheel_thickness)}" iyz="0" izz="${wheel_mass/2 * wheel_radius*wheel_radius}"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_thickness}"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <visual>
+        <origin xyz="0 0 0" rpy="1.5707 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_thickness/2 + 0.01}" length="0.07"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <collision name="collision_${name}">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_thickness}"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${name}" type="continuous">
+      <origin xyz="0 ${y_offset} 0" rpy="-1.570796 0 0"/>
+      <parent link="base_link"/>
+      <child link="${name}"/>
+      <axis xyz="0 0 1" />
+    </joint>
+  </xacro:macro>
+
+  <wheel name="left_wheel" y_offset="${wheelbase/2}" />
+  <wheel name="right_wheel" y_offset="${-wheelbase/2}" />
+
+  <link name="body_com">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${body_mass}"/>
+      <inertia ixx="${body_mass/12 * (body_width*body_width + body_length*body_length)}" ixy="0" ixz="0" iyy="${body_mass/12 * (body_length*body_length + body_depth*body_depth)}" iyz="0" izz="${body_mass/12 * (body_width*body_width + body_depth*body_depth)}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.3 0.3 ${body_length}"/>
+      </geometry>
+      <material name="orange"/>
+    </visual>
+    <collision name="collision_chassis">
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.3 0.3 ${body_length}"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.01"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+    <xacro:if value="$(arg training_wheels)" >
+      <collision name="training_wheel_1">
+        <origin xyz="1 0 ${0.025-wheel_radius}" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.024"/>
+        </geometry>
+      </collision>
+      <collision name="training_wheel_2">
+        <origin xyz="-1 0 ${0.025-wheel_radius}" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.024"/>
+        </geometry>
+      </collision>
+    </xacro:if>
+  </link>
+
+  <joint name="base_com" type="fixed">
+    <origin xyz="0 0 ${body_com_height-wheel_radius}" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="body_com"/>
+  </joint>
+
+  <material name="grey">
+    <color rgba="0.2 0.2 0.2 1.0"/>
+  </material>
+
+  <material name="orange">
+    <color rgba="0.64 0.313939 0.095351 1.0"/>
+  </material>
+</robot>
