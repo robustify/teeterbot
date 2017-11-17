@@ -79,6 +79,8 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
 
   pub_left_encoder_ = n_->advertise<std_msgs::Float64>("left_wheel_speed", 1);
   pub_right_encoder_ = n_->advertise<std_msgs::Float64>("right_wheel_speed", 1);
+  pub_left_current_ = n_->advertise<std_msgs::Float64>("left_current", 1);
+  pub_right_current_ = n_->advertise<std_msgs::Float64>("right_current", 1);
   pub_fallen_over_ = n_->advertise<std_msgs::Bool>("fallen_over", 1, true);
 
   sub_left_voltage_ = n_->subscribe<std_msgs::Float64>("left_motor_voltage", 1, boost::bind(&ControllerInterfacePlugin::recvMotorVoltage, this, _1, 0));
@@ -108,12 +110,18 @@ void ControllerInterfacePlugin::data100Cb(const ros::TimerEvent &event)
 {
   std_msgs::Float64 left_encoder_msg;
   std_msgs::Float64 right_encoder_msg;
+  std_msgs::Float64 left_current_msg;
+  std_msgs::Float64 right_current_msg;
 
   left_encoder_msg.data = left_wheel_joint_->GetVelocity(0);
   right_encoder_msg.data = right_wheel_joint_->GetVelocity(0);
+  left_current_msg.data = left_motor_->current_;
+  right_current_msg.data = right_motor_->current_;
 
   pub_left_encoder_.publish(left_encoder_msg);
   pub_right_encoder_.publish(right_encoder_msg);
+  pub_left_current_.publish(left_current_msg);
+  pub_right_current_.publish(right_current_msg);
 }
 
 void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)

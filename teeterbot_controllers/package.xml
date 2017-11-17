@@ -1,19 +1,18 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>teeterbot</name>
+  <name>teeterbot_controllers</name>
   <version>0.0.0</version>
   <description>
-    Metapackage for teeterbot
+    Control algorithms for teeterbot
   </description>
   <maintainer email="mradov@gmail.com">Micho Radovnikovich</maintainer>
-  <license>BSD</license>
+  <license>BSD2</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <exec_depend>teeterbot_gazebo</exec_depend>
-  <exec_depend>teeterbot_description</exec_depend>
-  <exec_depend>teeterbot_controllers</exec_depend>
+
+  <depend>roscpp</depend>
+  <depend>dynamic_reconfigure</depend>
 
   <export>
-    <metapackage/>
   </export>
 </package>

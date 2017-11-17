@@ -34,6 +34,8 @@ private:
     ros::NodeHandle *n_;
     ros::Publisher pub_left_encoder_;
     ros::Publisher pub_right_encoder_;
+    ros::Publisher pub_left_current_;
+    ros::Publisher pub_right_current_;
     ros::Publisher pub_fallen_over_;
     ros::Subscriber sub_left_voltage_;
     ros::Subscriber sub_right_voltage_;

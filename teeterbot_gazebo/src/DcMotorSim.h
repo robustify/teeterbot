@@ -11,6 +11,7 @@ typedef struct {
     double inductance;
     double resistance;
     double torque_constant;
+    double max_current;
 } DcMotorProps;
 
 class DcMotorSim
@@ -18,9 +19,9 @@ class DcMotorSim
 public:
     DcMotorSim ( ros::NodeHandle n, const gazebo::physics::JointPtr &joint, const gazebo::physics::LinkPtr &link );
     void step ( double ts, double voltage_in, double load_torque=0 );
+    double current_;
 private:
     gazebo::physics::JointPtr joint_;
-    double current_;
     DcMotorProps props_;
 };
 

@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Start up Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" />
+
+  <!-- Spawn Teeterbot with specific settings -->
+  <include file="$(find teeterbot_gazebo)/launch/teeterbot_robot.launch" >
+    <!-- Name and spawn pose -->
+    <arg name="robot_name" value="teeterbot" />
+    <arg name="start_x" value="0.0" />
+    <arg name="start_y" value="0.0" />
+    <arg name="start_z" value="0.2" />
+    <arg name="start_yaw" value="0.0" />
+
+    <!-- Physical properties -->
+    <arg name="body_length" value="0.8" />
+    <arg name="body_width" value="0.3" />
+    <arg name="body_depth" value="0.3" />
+    <arg name="body_mass" value="10.0" />
+    <arg name="wheel_mass" value="1.0" />
+    <arg name="wheel_radius" value="0.2" />
+    <arg name="training_wheels" value="true" />
+
+    <!-- Simulation behavior settings -->
+    <arg name="pub_ground_truth" value="false" />
+    <arg name="auto_reset_orientation" value="false" />
+    <arg name="auto_reset_delay" value="2.0" />
+  </include>
+
+  <!-- Run two instances of motor speed control node -->
+  <group ns="teeterbot" >
+
+    <node pkg="teeterbot_controllers" type="motor_speed_control_node" name="left_speed_control" output="screen" >
+      <remap from="speed_cmd" to="left_speed_cmd" />
+      <remap from="wheel_speed" to="left_wheel_speed" />
+      <remap from="voltage_output" to="left_motor_voltage" />
+    </node>
+
+    <node pkg="teeterbot_controllers" type="motor_speed_control_node" name="right_speed_control" output="screen" >
+      <remap from="speed_cmd" to="right_speed_cmd" />
+      <remap from="wheel_speed" to="right_wheel_speed" />
+      <remap from="voltage_output" to="right_motor_voltage" />
+    </node>
+
+  </group>
+
+</launch>
