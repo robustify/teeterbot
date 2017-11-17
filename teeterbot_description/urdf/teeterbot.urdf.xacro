@@ -23,7 +23,6 @@
   <xacro:property name="body_width" value="$(arg body_width)" />
   <xacro:property name="body_depth" value="$(arg body_depth)" />
   <xacro:property name="body_length" value="$(arg body_length)" />
-  <xacro:property name="body_com_height" value="${wheel_radius + body_length/2}" />
 
   <gazebo>
     <plugin name="controller_interface" filename="libteeterbot_controller_interface.so">
@@ -89,14 +88,14 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.3 0.3 ${body_length}"/>
+        <box size="${body_depth} ${body_width} ${body_length}"/>
       </geometry>
       <material name="orange"/>
     </visual>
     <collision name="collision_chassis">
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <box size="0.3 0.3 ${body_length}"/>
+        <box size="${body_depth} ${body_width} ${body_length}"/>
       </geometry>
     </collision>
   </link>
@@ -124,7 +123,7 @@
   </link>
 
   <joint name="base_com" type="fixed">
-    <origin xyz="0 0 ${body_com_height-wheel_radius}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${body_length/2}" rpy="0 0 0"/>
     <parent link="base_link"/>
     <child link="body_com"/>
   </joint>
