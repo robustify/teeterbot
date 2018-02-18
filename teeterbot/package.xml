@@ -12,6 +12,7 @@
   <exec_depend>teeterbot_gazebo</exec_depend>
   <exec_depend>teeterbot_description</exec_depend>
   <exec_depend>teeterbot_controllers</exec_depend>
+  <exec_depend>hector_gazebo</exec_depend>
 
   <export>
     <metapackage/>
