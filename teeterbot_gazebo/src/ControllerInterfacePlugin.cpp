@@ -74,6 +74,16 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
     auto_reset_delay_ = 2.0;
   }
 
+  if (sdf->HasElement("bodyLength")) {
+    sdf->GetElement("bodyLength")->GetValue()->Get(nudge_offset_.z);
+    ROS_INFO("Will apply nudge force at top of robot");
+  } else {
+    ROS_WARN("No body length specified! Nudge force applied 0.5 meters above base");
+    nudge_offset_.z = 0.5;
+  }
+  nudge_offset_.x = 0;
+  nudge_offset_.y = 0;
+
   // ROS setup
   n_ = new ros::NodeHandle(model->GetName());
   left_motor_ = new teeterbot_gazebo::DcMotorSim(ros::NodeHandle(*n_, "left_motor"), left_wheel_joint_, left_wheel_link_);
@@ -87,6 +97,8 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
 
   sub_left_voltage_ = n_->subscribe<std_msgs::Float64>("left_motor_voltage", 1, boost::bind(&ControllerInterfacePlugin::recvMotorVoltage, this, _1, 0));
   sub_right_voltage_ = n_->subscribe<std_msgs::Float64>("right_motor_voltage", 1, boost::bind(&ControllerInterfacePlugin::recvMotorVoltage, this, _1, 1));
+
+  nudge_srv_ = n_->advertiseService("nudge", &ControllerInterfacePlugin::nudgeCb, this);
 
   data_100Hz_timer_ = n_->createTimer(ros::Duration(0.01), &ControllerInterfacePlugin::data100Cb, this);
 
@@ -146,7 +158,7 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
   fallen_over_ = fabs(pitch) > M_PI_4;
 
   // Reset orientation if enabled and conditions are met
-  if (fallen_over_ && (info.simTime.Double() - fallen_over_stamp_) > auto_reset_delay_){
+  if (auto_reset_orientation_ && fallen_over_ && (info.simTime.Double() - fallen_over_stamp_) > auto_reset_delay_){
     model_->SetWorldPose(math::Pose(pose.pos, math::Quaternion(0.0, 0.0, yaw)));
   }
 
@@ -165,6 +177,23 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
   footprint_link_transform.setRotation(tf::Quaternion(rollpitch.X(), rollpitch.Y(), rollpitch.Z(), rollpitch.W()));
   broadcaster_.sendTransform(footprint_link_transform);
 
+  // Apply nudge force
+  if (is_nudging_) {
+    if (nudge_stamp_ < 0) {
+      nudge_stamp_ = info.simTime.Double();
+    }
+
+    if ((info.simTime.Double() - nudge_stamp_) > nudge_duration_) {
+      is_nudging_ = false;
+      nudge_stamp_ = -1;
+    }
+
+    body_link_->AddLinkForce(nudge_force_, nudge_offset_);
+  } else {
+    math::Vector3 zero;
+    body_link_->AddLinkForce(zero, zero);
+  }
+
   // Publish ground truth transform from world to base_footprint, if enabled
   if (pub_ground_truth_) {
     tf::StampedTransform ground_truth_transform;
@@ -175,6 +204,16 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
     ground_truth_transform.setRotation(tf::Quaternion(0.0, 0.0, sin(0.5 * yaw), cos(0.5 * yaw)));
     broadcaster_.sendTransform(ground_truth_transform);
   }
+}
+
+bool ControllerInterfacePlugin::nudgeCb(teeterbot_gazebo::NudgeTeeterbotRequest &req, teeterbot_gazebo::NudgeTeeterbotResponse &res)
+{
+  nudge_duration_ = (req.duration == 0 ? 0.1 : req.duration);
+  nudge_force_.x = req.force;
+  nudge_force_.y = 0;
+  nudge_force_.z = 0;
+  is_nudging_ = true;
+  return true;
 }
 
 void ControllerInterfacePlugin::getEuler(double &roll, double &pitch, double &yaw)

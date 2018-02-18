@@ -8,6 +8,7 @@
 #include <gazebo/physics/physics.hh>
 #include <tf/transform_broadcaster.h>
 #include <tf/tf.h>
+#include <teeterbot_gazebo/NudgeTeeterbot.h>
 
 #include "DcMotorSim.h"
 
@@ -25,6 +26,7 @@ protected:
     virtual void Reset();
 
 private:
+    bool nudgeCb(teeterbot_gazebo::NudgeTeeterbotRequest& req, teeterbot_gazebo::NudgeTeeterbotResponse& res);
     void OnUpdate ( const common::UpdateInfo &info );
     void data100Cb ( const ros::TimerEvent &event );
     void recvMotorVoltage ( const std_msgs::Float64ConstPtr &msg, int side );
@@ -39,6 +41,7 @@ private:
     ros::Publisher pub_fallen_over_;
     ros::Subscriber sub_left_voltage_;
     ros::Subscriber sub_right_voltage_;
+    ros::ServiceServer nudge_srv_;
     ros::Timer data_100Hz_timer_;
     tf::TransformBroadcaster broadcaster_;
 
@@ -57,9 +60,16 @@ private:
 
     // Status properties
     bool fallen_over_;
+    double fallen_over_stamp_;
     double left_voltage_;
     double right_voltage_;
-    double fallen_over_stamp_;
+
+    // Nudge properties
+    bool is_nudging_;
+    double nudge_stamp_;
+    double nudge_duration_;
+    math::Vector3 nudge_force_;
+    math::Vector3 nudge_offset_;
 
     // SDF parameters
     bool pub_ground_truth_;

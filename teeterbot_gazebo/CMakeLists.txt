@@ -15,6 +15,13 @@ generate_dynamic_reconfigure_options(
   cfg/MotorSpeedControl.cfg
 )
 
+add_service_files(
+  FILES
+    NudgeTeeterbot.srv
+)
+
+generate_messages()
+
 catkin_package()
 
 include_directories(
@@ -26,6 +33,9 @@ include_directories(
 add_library(teeterbot_controller_interface
   src/ControllerInterfacePlugin.cpp
   src/DcMotorSim.cpp
+)
+add_dependencies(teeterbot_controller_interface
+  ${PROJECT_NAME}_gencpp
 )
 target_link_libraries(teeterbot_controller_interface
   ${catkin_LIBRARIES}
