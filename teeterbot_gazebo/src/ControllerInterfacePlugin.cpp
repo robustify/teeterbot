@@ -9,6 +9,8 @@ ControllerInterfacePlugin::ControllerInterfacePlugin()
 
 ControllerInterfacePlugin::~ControllerInterfacePlugin()
 {
+  delete left_motor_;
+  delete right_motor_;
   n_->shutdown();
   delete n_;
 }

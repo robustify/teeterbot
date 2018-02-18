@@ -7,7 +7,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::NodeHandle pn("~");
 
-  teeterbot_controllers::MotorSpeedController node(n, pn);
+  teeterbot_gazebo::MotorSpeedController node(n, pn);
 
   ros::spin();
 }

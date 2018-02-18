@@ -4,9 +4,9 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
 #include <dynamic_reconfigure/server.h>
-#include <teeterbot_controllers/MotorSpeedControlConfig.h>
+#include <teeterbot_gazebo/MotorSpeedControlConfig.h>
 
-namespace teeterbot_controllers
+namespace teeterbot_gazebo
 {
 
 class MotorSpeedController
@@ -28,7 +28,7 @@ private:
     dynamic_reconfigure::Server<MotorSpeedControlConfig> srv_;
     MotorSpeedControlConfig cfg_;
 
-    static const double SAMPLE_TIME = 0.01;
+    const double SAMPLE_TIME = 0.01;
     double speed_cmd_;
     double speed_target_;
     double last_error_;

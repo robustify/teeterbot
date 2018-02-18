@@ -1,6 +1,6 @@
 #include "MotorSpeedController.h"
 
-namespace teeterbot_controllers
+namespace teeterbot_gazebo
 {
 
 MotorSpeedController::MotorSpeedController(ros::NodeHandle n, ros::NodeHandle pn) :

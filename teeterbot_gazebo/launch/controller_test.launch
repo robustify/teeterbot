@@ -31,13 +31,13 @@
   <!-- Run two instances of motor speed control node -->
   <group ns="teeterbot" >
 
-    <node pkg="teeterbot_controllers" type="motor_speed_control_node" name="left_speed_control" output="screen" >
+    <node pkg="teeterbot_gazebo" type="motor_speed_control_node" name="left_speed_control" output="screen" >
       <remap from="speed_cmd" to="left_speed_cmd" />
       <remap from="wheel_speed" to="left_wheel_speed" />
       <remap from="voltage_output" to="left_motor_voltage" />
     </node>
 
-    <node pkg="teeterbot_controllers" type="motor_speed_control_node" name="right_speed_control" output="screen" >
+    <node pkg="teeterbot_gazebo" type="motor_speed_control_node" name="right_speed_control" output="screen" >
       <remap from="speed_cmd" to="right_speed_cmd" />
       <remap from="wheel_speed" to="right_wheel_speed" />
       <remap from="voltage_output" to="right_motor_voltage" />
