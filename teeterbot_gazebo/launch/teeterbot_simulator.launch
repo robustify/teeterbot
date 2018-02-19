@@ -1,6 +1,10 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="voltage_mode" default="false" />
+  <arg name="torque_mode" default="false" />
+  <arg name="speed_mode" default="false" />
+
   <!-- Start up Gazebo -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch" />
 
@@ -26,23 +30,29 @@
     <arg name="pub_ground_truth" value="false" />
     <arg name="auto_reset_orientation" value="true" />
     <arg name="auto_reset_delay" value="2.0" />
+
+    <!-- Control mode (set only one) -->
+    <arg name="voltage_mode" value="$(arg voltage_mode)" />
+    <arg name="torque_mode" value="$(arg torque_mode)" />
+    <arg name="speed_mode" value="$(arg speed_mode)" />
   </include>
 
-  <!-- Run two instances of motor speed control node -->
-  <group ns="teeterbot" >
+  <param name="/gazebo/left_speed_control/ramp_limit" value="20.0" />
+  <param name="/gazebo/left_speed_control/kp" value="3.0" />
+  <param name="/gazebo/left_speed_control/ki" value="2.0" />
+  <param name="/gazebo/left_speed_control/kd" value="0.0" />
+  <param name="/gazebo/right_speed_control/ramp_limit" value="20.0" />
+  <param name="/gazebo/right_speed_control/kp" value="3.0" />
+  <param name="/gazebo/right_speed_control/ki" value="2.0" />
+  <param name="/gazebo/right_speed_control/kd" value="0.0" />
 
-    <node pkg="teeterbot_gazebo" type="motor_speed_control_node" name="left_speed_control" output="screen" >
-      <remap from="speed_cmd" to="left_speed_cmd" />
-      <remap from="wheel_speed" to="left_wheel_speed" />
-      <remap from="voltage_output" to="left_motor_voltage" />
-    </node>
-
-    <node pkg="teeterbot_gazebo" type="motor_speed_control_node" name="right_speed_control" output="screen" >
-      <remap from="speed_cmd" to="right_speed_cmd" />
-      <remap from="wheel_speed" to="right_wheel_speed" />
-      <remap from="voltage_output" to="right_motor_voltage" />
-    </node>
-
-  </group>
+  <param name="/gazebo/left_torque_control/ramp_limit" value="1000.0" />
+  <param name="/gazebo/left_torque_control/kp" value="10.0" />
+  <param name="/gazebo/left_torque_control/ki" value="2.0" />
+  <param name="/gazebo/left_torque_control/kd" value="0.0" />
+  <param name="/gazebo/right_torque_control/ramp_limit" value="1000.0" />
+  <param name="/gazebo/right_torque_control/kp" value="10.0" />
+  <param name="/gazebo/right_torque_control/ki" value="2.0" />
+  <param name="/gazebo/right_torque_control/kd" value="0.0" />
 
 </launch>

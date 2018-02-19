@@ -10,6 +10,7 @@
 #include <tf/tf.h>
 #include <teeterbot_gazebo/NudgeTeeterbot.h>
 
+#include "MotorController.h"
 #include "DcMotorSim.h"
 
 namespace gazebo
@@ -29,7 +30,7 @@ private:
     bool nudgeCb(teeterbot_gazebo::NudgeTeeterbotRequest& req, teeterbot_gazebo::NudgeTeeterbotResponse& res);
     void OnUpdate ( const common::UpdateInfo &info );
     void data100Cb ( const ros::TimerEvent &event );
-    void recvMotorVoltage ( const std_msgs::Float64ConstPtr &msg, int side );
+    void recvMotorCmd ( const std_msgs::Float64ConstPtr &msg, int side );
     void getEuler ( double &roll, double &pitch, double &yaw );
 
     // ROS
@@ -39,8 +40,8 @@ private:
     ros::Publisher pub_left_current_;
     ros::Publisher pub_right_current_;
     ros::Publisher pub_fallen_over_;
-    ros::Subscriber sub_left_voltage_;
-    ros::Subscriber sub_right_voltage_;
+    ros::Subscriber sub_left_cmd_;
+    ros::Subscriber sub_right_cmd_;
     ros::ServiceServer nudge_srv_;
     ros::Timer data_100Hz_timer_;
     tf::TransformBroadcaster broadcaster_;
@@ -55,14 +56,18 @@ private:
     physics::LinkPtr body_link_;
 
     // DC motor simulation instances
-    teeterbot_gazebo::DcMotorSim *left_motor_;
-    teeterbot_gazebo::DcMotorSim *right_motor_;
+    boost::shared_ptr<teeterbot_gazebo::DcMotorSim> left_motor_;
+    boost::shared_ptr<teeterbot_gazebo::DcMotorSim> right_motor_;
+
+    // Controller instances
+    boost::shared_ptr<teeterbot_gazebo::MotorController> left_control_;
+    boost::shared_ptr<teeterbot_gazebo::MotorController> right_control_;
 
     // Status properties
     bool fallen_over_;
     double fallen_over_stamp_;
-    double left_voltage_;
-    double right_voltage_;
+    double left_cmd_;
+    double right_cmd_;
 
     // Nudge properties
     bool is_nudging_;
@@ -70,6 +75,11 @@ private:
     double nudge_duration_;
     math::Vector3 nudge_force_;
     math::Vector3 nudge_offset_;
+
+    // Control mode
+    bool voltage_mode_;
+    bool torque_mode_;
+    bool speed_mode_;
 
     // SDF parameters
     bool pub_ground_truth_;

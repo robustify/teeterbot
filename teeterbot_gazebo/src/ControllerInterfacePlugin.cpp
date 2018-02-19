@@ -9,8 +9,10 @@ ControllerInterfacePlugin::ControllerInterfacePlugin()
 
 ControllerInterfacePlugin::~ControllerInterfacePlugin()
 {
-  delete left_motor_;
-  delete right_motor_;
+  left_motor_.reset();
+  right_motor_.reset();
+  left_control_.reset();
+  right_control_.reset();
   n_->shutdown();
   delete n_;
 }
@@ -56,6 +58,7 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
     pub_ground_truth_ = false;
   }
 
+  // Auto-reset parameters
   if (sdf->HasElement("autoResetOrientation")) {
     sdf->GetElement("autoResetOrientation")->GetValue()->Get(auto_reset_orientation_);
     if (auto_reset_orientation_){
@@ -74,6 +77,7 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
     auto_reset_delay_ = 2.0;
   }
 
+  // Load nudge force offset
   if (sdf->HasElement("bodyLength")) {
     sdf->GetElement("bodyLength")->GetValue()->Get(nudge_offset_.z);
     ROS_INFO("Will apply nudge force at top of robot");
@@ -84,10 +88,58 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
   nudge_offset_.x = 0;
   nudge_offset_.y = 0;
 
+  // Load control mode
+  voltage_mode_ = false;
+  torque_mode_ = false;
+  speed_mode_ = false;
+  int num_modes_selected = 0;
+  if (sdf->HasElement("voltageMode")) {
+    sdf->GetElement("voltageMode")->GetValue()->Get(voltage_mode_);
+    if (voltage_mode_) {
+      num_modes_selected++;
+    }
+  }
+  if (sdf->HasElement("torqueMode")) {
+    sdf->GetElement("torqueMode")->GetValue()->Get(torque_mode_);
+    if (torque_mode_) {
+      num_modes_selected++;
+    }
+  }
+  if (sdf->HasElement("speedMode")) {
+    sdf->GetElement("speedMode")->GetValue()->Get(speed_mode_);
+    if (speed_mode_) {
+      num_modes_selected++;
+    }
+  }
+
+  if (num_modes_selected == 0) {
+    ROS_WARN("No control mode specified; defaulting to voltage mode");
+    voltage_mode_ = true;
+  } else if (num_modes_selected > 1) {
+    ROS_ERROR("Multiple control modes specified; defaulting to voltage mode");
+    voltage_mode_ = true;
+    torque_mode_ = false;
+    speed_mode_ = false;
+  }
+
   // ROS setup
   n_ = new ros::NodeHandle(model->GetName());
-  left_motor_ = new teeterbot_gazebo::DcMotorSim(ros::NodeHandle(*n_, "left_motor"), left_wheel_joint_, left_wheel_link_);
-  right_motor_ = new teeterbot_gazebo::DcMotorSim(ros::NodeHandle(*n_, "right_motor"), right_wheel_joint_, right_wheel_link_);
+  left_motor_.reset(new teeterbot_gazebo::DcMotorSim(ros::NodeHandle(*n_, "left_motor"), left_wheel_joint_, left_wheel_link_));
+  right_motor_.reset(new teeterbot_gazebo::DcMotorSim(ros::NodeHandle(*n_, "right_motor"), right_wheel_joint_, right_wheel_link_));
+
+  if (voltage_mode_) {
+    ROS_INFO("Using voltage mode");
+  }
+  if (torque_mode_) {
+    ROS_INFO("Using torque mode");
+    left_control_.reset(new teeterbot_gazebo::MotorController(*n_, ros::NodeHandle("~"), "left_torque_control"));
+    right_control_.reset(new teeterbot_gazebo::MotorController(*n_, ros::NodeHandle("~"), "right_torque_control"));
+  }
+  if (speed_mode_) {
+    ROS_INFO("Using speed mode");
+    left_control_.reset(new teeterbot_gazebo::MotorController(*n_, ros::NodeHandle("~"), "left_speed_control"));
+    right_control_.reset(new teeterbot_gazebo::MotorController(*n_, ros::NodeHandle("~"), "right_speed_control"));
+  }
 
   pub_left_encoder_ = n_->advertise<std_msgs::Float64>("left_wheel_speed", 1);
   pub_right_encoder_ = n_->advertise<std_msgs::Float64>("right_wheel_speed", 1);
@@ -95,15 +147,27 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
   pub_right_current_ = n_->advertise<std_msgs::Float64>("right_current", 1);
   pub_fallen_over_ = n_->advertise<std_msgs::Bool>("fallen_over", 1, true);
 
-  sub_left_voltage_ = n_->subscribe<std_msgs::Float64>("left_motor_voltage", 1, boost::bind(&ControllerInterfacePlugin::recvMotorVoltage, this, _1, 0));
-  sub_right_voltage_ = n_->subscribe<std_msgs::Float64>("right_motor_voltage", 1, boost::bind(&ControllerInterfacePlugin::recvMotorVoltage, this, _1, 1));
+  std::string left_cmd_topic;
+  std::string right_cmd_topic;
+  if (voltage_mode_) {
+    left_cmd_topic = "left_motor_voltage";
+    right_cmd_topic = "right_motor_voltage";
+  } else if (torque_mode_) {
+    left_cmd_topic = "left_torque_cmd";
+    right_cmd_topic = "right_torque_cmd";
+  } else {
+    left_cmd_topic = "left_speed_cmd";
+    right_cmd_topic = "right_speed_cmd";
+  }
+  sub_left_cmd_ = n_->subscribe<std_msgs::Float64>(left_cmd_topic, 1, boost::bind(&ControllerInterfacePlugin::recvMotorCmd, this, _1, 0));
+  sub_right_cmd_ = n_->subscribe<std_msgs::Float64>(right_cmd_topic, 1, boost::bind(&ControllerInterfacePlugin::recvMotorCmd, this, _1, 1));
 
   nudge_srv_ = n_->advertiseService("nudge", &ControllerInterfacePlugin::nudgeCb, this);
 
   data_100Hz_timer_ = n_->createTimer(ros::Duration(0.01), &ControllerInterfacePlugin::data100Cb, this);
 
-  left_voltage_ = 0.0;
-  right_voltage_ = 0.0;
+  left_cmd_ = 0.0;
+  right_cmd_ = 0.0;
 
   std_msgs::Bool init_fallen_over;
   init_fallen_over.data = false;
@@ -111,12 +175,12 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
   fallen_over_ = false;
 }
 
-void ControllerInterfacePlugin::recvMotorVoltage(const std_msgs::Float64ConstPtr &msg, int side)
+void ControllerInterfacePlugin::recvMotorCmd(const std_msgs::Float64ConstPtr &msg, int side)
 {
   if (side == 0) { // left
-    left_voltage_ = msg->data;
+    left_cmd_ = msg->data;
   } else { // right
-    right_voltage_ = msg->data;
+    right_cmd_ = msg->data;
   }
 }
 
@@ -162,9 +226,29 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
     model_->SetWorldPose(math::Pose(pose.pos, math::Quaternion(0.0, 0.0, yaw)));
   }
 
+  double left_voltage;
+  double right_voltage;
+  double left_feedback;
+  double right_feedback;
+
+  if (voltage_mode_) {
+    left_voltage = left_cmd_;
+    right_voltage = right_cmd_;
+  } else {
+    if (torque_mode_) {
+      left_feedback = left_motor_->current_ * left_motor_->props_.torque_constant;
+      right_feedback = right_motor_->current_ * right_motor_->props_.torque_constant;
+    } else {
+      left_feedback = left_wheel_joint_->GetVelocity(0);
+      right_feedback = right_wheel_joint_->GetVelocity(0);
+    }
+    left_voltage = left_control_->update(0.001, left_cmd_, left_feedback);
+    right_voltage = right_control_->update(0.001, right_cmd_, right_feedback);
+  }
+
   // Apply voltage to motors
-  left_motor_->step(0.001, left_voltage_);
-  right_motor_->step(0.001, right_voltage_);
+  left_motor_->step(0.001, left_voltage);
+  right_motor_->step(0.001, right_voltage);
 
   // Publish footprint frame
   tf::StampedTransform footprint_link_transform;
