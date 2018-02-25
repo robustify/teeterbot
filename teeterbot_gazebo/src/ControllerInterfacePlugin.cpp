@@ -5,6 +5,21 @@ namespace gazebo
 
 ControllerInterfacePlugin::ControllerInterfacePlugin()
 {
+  fallen_over_ = false;
+  fallen_over_stamp_ = 0;
+  left_cmd_ = 0;
+  right_cmd_ = 0;
+
+  is_nudging_ = false;
+  nudge_stamp_ = -1;
+  nudge_duration_ = 0;
+  nudge_force_.x = 0;
+  nudge_force_.y = 0;
+  nudge_force_.x = 0;
+
+  nudge_offset_.x = 0;
+  nudge_offset_.y = 0;
+  nudge_offset_.z = 0;
 }
 
 ControllerInterfacePlugin::~ControllerInterfacePlugin()
