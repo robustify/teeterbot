@@ -20,11 +20,11 @@
     <arg name="body_mass" value="10.0" />
     <arg name="wheel_mass" value="1.0" />
     <arg name="wheel_radius" value="0.2" />
-    <arg name="training_wheels" value="true" />
+    <arg name="training_wheels" value="false" />
 
     <!-- Simulation behavior settings -->
     <arg name="pub_ground_truth" value="false" />
-    <arg name="auto_reset_orientation" value="false" />
+    <arg name="auto_reset_orientation" value="true" />
     <arg name="auto_reset_delay" value="2.0" />
 
     <!-- Control mode (set only one) -->

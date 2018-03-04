@@ -19,7 +19,7 @@
 
   <!-- Simulation behavior settings -->
   <arg name="pub_ground_truth" default="false" />
-  <arg name="auto_reset_orientation" default="false" />
+  <arg name="auto_reset_orientation" default="true" />
   <arg name="auto_reset_delay" default="2.0" />
 
   <!-- Control mode (set only one) -->
@@ -51,5 +51,24 @@
       <param name="publish_frequency" value="50.0" />
     </node>
   </group>
+
+  <!-- Default controller parameters -->
+  <param name="/gazebo/left_speed_control/ramp_limit" value="20.0" />
+  <param name="/gazebo/left_speed_control/kp" value="3.0" />
+  <param name="/gazebo/left_speed_control/ki" value="2.0" />
+  <param name="/gazebo/left_speed_control/kd" value="0.0" />
+  <param name="/gazebo/right_speed_control/ramp_limit" value="20.0" />
+  <param name="/gazebo/right_speed_control/kp" value="3.0" />
+  <param name="/gazebo/right_speed_control/ki" value="2.0" />
+  <param name="/gazebo/right_speed_control/kd" value="0.0" />
+
+  <param name="/gazebo/left_torque_control/ramp_limit" value="1000.0" />
+  <param name="/gazebo/left_torque_control/kp" value="10.0" />
+  <param name="/gazebo/left_torque_control/ki" value="2.0" />
+  <param name="/gazebo/left_torque_control/kd" value="0.0" />
+  <param name="/gazebo/right_torque_control/ramp_limit" value="1000.0" />
+  <param name="/gazebo/right_torque_control/kp" value="10.0" />
+  <param name="/gazebo/right_torque_control/ki" value="2.0" />
+  <param name="/gazebo/right_torque_control/kd" value="0.0" />
 
 </launch>
