@@ -15,4 +15,4 @@ install:
   - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
 script: 
   - source .ci_config/travis.sh
-  - source ./travis.sh
+  # - source ./travis.sh # Add this to do things locally
