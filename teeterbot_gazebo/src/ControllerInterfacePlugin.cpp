@@ -13,6 +13,10 @@ ControllerInterfacePlugin::ControllerInterfacePlugin()
   is_nudging_ = false;
   nudge_stamp_ = -1;
   nudge_duration_ = 0;
+#if GAZEBO_MAJOR_VERSION >= 9
+  nudge_force_.Set(0, 0, 0);
+  nudge_offset_.Set(0, 0, 0);
+#else
   nudge_force_.x = 0;
   nudge_force_.y = 0;
   nudge_force_.x = 0;
@@ -20,6 +24,7 @@ ControllerInterfacePlugin::ControllerInterfacePlugin()
   nudge_offset_.x = 0;
   nudge_offset_.y = 0;
   nudge_offset_.z = 0;
+#endif
 }
 
 ControllerInterfacePlugin::~ControllerInterfacePlugin()
@@ -93,6 +98,17 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
   }
 
   // Load nudge force offset
+#if GAZEBO_MAJOR_VERSION >= 9
+  if (sdf->HasElement("bodyLength")) {
+    sdf->GetElement("bodyLength")->GetValue()->Get(nudge_offset_.Z());
+    ROS_INFO("Will apply nudge force at top of robot");
+  } else {
+    ROS_WARN("No body length specified! Nudge force applied 0.5 meters above base");
+    nudge_offset_.Z(0.5);
+  }
+  nudge_offset_.X(0);
+  nudge_offset_.Y(0);
+#else
   if (sdf->HasElement("bodyLength")) {
     sdf->GetElement("bodyLength")->GetValue()->Get(nudge_offset_.z);
     ROS_INFO("Will apply nudge force at top of robot");
@@ -102,6 +118,7 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
   }
   nudge_offset_.x = 0;
   nudge_offset_.y = 0;
+#endif
 
   // Load control mode
   voltage_mode_ = false;
@@ -219,7 +236,12 @@ void ControllerInterfacePlugin::data100Cb(const ros::TimerEvent &event)
 
 void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
 {
+#if GAZEBO_MAJOR_VERSION >= 9
+  ignition::math::Pose3d pose = body_link_->WorldPose();
+#else
   math::Pose pose = body_link_->GetWorldPose();
+#endif
+
   double roll, pitch, yaw;
   getEuler(roll, pitch, yaw);
 
@@ -238,7 +260,11 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
 
   // Reset orientation if enabled and conditions are met
   if (auto_reset_orientation_ && fallen_over_ && (info.simTime.Double() - fallen_over_stamp_) > auto_reset_delay_){
+#if GAZEBO_MAJOR_VERSION >= 9
+    model_->SetWorldPose(ignition::math::Pose3d(pose.Pos().X(), pose.Pos().Y(), pose.Pos().Z(), 0.0, 0.0, yaw));
+#else
     model_->SetWorldPose(math::Pose(pose.pos, math::Quaternion(0.0, 0.0, yaw)));
+#endif
   }
 
   double left_voltage;
@@ -270,7 +296,11 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
   footprint_link_transform.child_frame_id_ = "base_link";
   footprint_link_transform.frame_id_ = "base_footprint";
   footprint_link_transform.stamp_.fromSec(info.simTime.Double());
+#if GAZEBO_MAJOR_VERSION >= 9
+  footprint_link_transform.setOrigin(tf::Vector3(0, 0, pose.Pos().Z()));
+#else
   footprint_link_transform.setOrigin(tf::Vector3(0, 0, pose.pos.z));
+#endif
   ignition::math::Quaternion<double> rollpitch;
   rollpitch.Euler(roll, pitch, 0.0);
   footprint_link_transform.setRotation(tf::Quaternion(rollpitch.X(), rollpitch.Y(), rollpitch.Z(), rollpitch.W()));
@@ -289,8 +319,12 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
 
     body_link_->AddLinkForce(nudge_force_, nudge_offset_);
   } else {
+#if GAZEBO_MAJOR_VERSION >= 9
+    body_link_->AddLinkForce(ignition::math::Vector3d(), ignition::math::Vector3d());
+#else
     math::Vector3 zero;
     body_link_->AddLinkForce(zero, zero);
+#endif
   }
 
   // Publish ground truth transform from world to base_footprint, if enabled
@@ -299,7 +333,11 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
     ground_truth_transform.child_frame_id_ = "base_footprint";
     ground_truth_transform.frame_id_ = "world";
     ground_truth_transform.stamp_.fromSec(info.simTime.Double());
+#if GAZEBO_MAJOR_VERSION >= 9
+    ground_truth_transform.setOrigin(tf::Vector3(pose.Pos().X(), pose.Pos().Y(), 0.0));
+#else
     ground_truth_transform.setOrigin(tf::Vector3(pose.pos.x, pose.pos.y, 0.0));
+#endif
     ground_truth_transform.setRotation(tf::Quaternion(0.0, 0.0, sin(0.5 * yaw), cos(0.5 * yaw)));
     broadcaster_.sendTransform(ground_truth_transform);
   }
@@ -308,15 +346,52 @@ void ControllerInterfacePlugin::OnUpdate(const common::UpdateInfo &info)
 bool ControllerInterfacePlugin::nudgeCb(teeterbot_gazebo::NudgeTeeterbotRequest &req, teeterbot_gazebo::NudgeTeeterbotResponse &res)
 {
   nudge_duration_ = (req.duration == 0 ? 0.1 : req.duration);
+#if GAZEBO_MAJOR_VERSION >= 9
+  nudge_force_.Set(req.force, 0, 0);
+#else
   nudge_force_.x = req.force;
   nudge_force_.y = 0;
   nudge_force_.z = 0;
+#endif
   is_nudging_ = true;
   return true;
 }
 
 void ControllerInterfacePlugin::getEuler(double &roll, double &pitch, double &yaw)
 {
+#if GAZEBO_MAJOR_VERSION >= 9
+  ignition::math::Pose3d pose = body_link_->WorldPose();
+  ignition::math::Quaternion<double> ignition_orientation(pose.Rot().W(), pose.Rot().X(), pose.Rot().Y(), pose.Rot().Z());
+  roll = ignition_orientation.Roll();
+  pitch = ignition_orientation.Pitch();
+  yaw = ignition_orientation.Yaw();
+
+  // Adjust RPY angles if body z axis is pointing down in global frame
+  ignition::math::Matrix3d rot(pose.Rot());
+  if (rot(2, 2) < 0) {
+    // Modify RPY angles
+    roll += M_PI;
+    yaw += M_PI;
+    pitch = M_PI - pitch;
+
+    // Wrap new angles into range (-pi, pi)
+    if (roll > M_PI) {
+      roll -= 2 * M_PI;
+    } else if (roll < -M_PI) {
+      roll += 2 * M_PI;
+    }
+    if (pitch > M_PI) {
+      pitch -= 2 * M_PI;
+    } else if (pitch < -M_PI) {
+      pitch += 2 * M_PI;
+    }
+    if (yaw > M_PI) {
+      yaw -= 2 * M_PI;
+    } else if (yaw < -M_PI) {
+      yaw += 2 * M_PI;
+    }
+  }
+#else
   math::Pose pose = body_link_->GetWorldPose();
   ignition::math::Quaternion<double> ignition_orientation(pose.rot.w, pose.rot.x, pose.rot.y, pose.rot.z);
   roll = ignition_orientation.Roll();
@@ -347,6 +422,7 @@ void ControllerInterfacePlugin::getEuler(double &roll, double &pitch, double &ya
       yaw += 2 * M_PI;
     }
   }
+#endif
 }
 
 }

@@ -73,8 +73,13 @@ private:
     bool is_nudging_;
     double nudge_stamp_;
     double nudge_duration_;
+#if GAZEBO_MAJOR_VERSION >= 9
+    ignition::math::Vector3d nudge_force_;
+    ignition::math::Vector3d nudge_offset_;
+#else
     math::Vector3 nudge_force_;
     math::Vector3 nudge_offset_;
+#endif
 
     // Control mode
     bool voltage_mode_;
