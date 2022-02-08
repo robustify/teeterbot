@@ -45,8 +45,8 @@ void ControllerInterfacePlugin::Load(physics::ModelPtr model, sdf::ElementPtr sd
 {
   // Gazebo setup
   model_ = model;
-  left_wheel_joint_ = model->GetJoint("left_wheel");
-  right_wheel_joint_ = model->GetJoint("right_wheel");
+  left_wheel_joint_ = model->GetJoint("left_wheel_joint");
+  right_wheel_joint_ = model->GetJoint("right_wheel_joint");
   left_wheel_link_ = model->GetLink("left_wheel");
   right_wheel_link_ = model->GetLink("right_wheel");
   body_link_ = model->GetLink("base_link");
