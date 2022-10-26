@@ -1,21 +1,26 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>teeterbot_gazebo</name>
   <version>0.0.0</version>
   <description>
     Gazebo plugins for teeterbot
   </description>
   <maintainer email="mradov@gmail.com">Micho Radovnikovich</maintainer>
-  <license>BSD2</license>
+  <license>BSD</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
-  <depend>roscpp</depend>
-  <depend>tf</depend>
-  <depend>dynamic_reconfigure</depend>
+  <depend>rclcpp</depend>
+  <depend>tf2_ros</depend>
+  <depend>gazebo_ros</depend>
+  <depend>example_interfaces</depend>
 
-  <build_depend>message_generation</build_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
+    <build_type>ament_cmake</build_type>
   </export>
 </package>

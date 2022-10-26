@@ -33,21 +33,18 @@
       <rpyOffset>0 0 0</rpyOffset>
     </plugin>
     <plugin name="teeterbot_interface" filename="libteeterbot_gazebo_plugin.so">
-      <pubGroundTruth>$(arg pub_ground_truth)</pubGroundTruth>
-      <autoResetOrientation>$(arg auto_reset_orientation)</autoResetOrientation>
-      <autoResetDelay>$(arg auto_reset_delay)</autoResetDelay>
-      <bodyLength>$(arg body_length)</bodyLength>
-      <voltageMode>$(arg voltage_mode)</voltageMode>
-      <torqueMode>$(arg torque_mode)</torqueMode>
-      <speedMode>$(arg speed_mode)</speedMode>
+      <pub_ground_truth>$(arg pub_ground_truth)</pub_ground_truth>
+      <auto_reset_orientation>$(arg auto_reset_orientation)</auto_reset_orientation>
+      <auto_reset_delay>$(arg auto_reset_delay)</auto_reset_delay>
+      <body_length>$(arg body_length)</body_length>
+      <voltage_mode>$(arg voltage_mode)</voltage_mode>
+      <torque_mode>$(arg torque_mode)</torque_mode>
+      <speed_mode>$(arg speed_mode)</speed_mode>
     </plugin>
     <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
-      <robotNamespace>$(arg robot_name)</robotNamespace>
-      <jointName>
-          left_wheel_joint, right_wheel_joint
-      </jointName>
-      <updateRate>100</updateRate>
-      <alwaysOn>true</alwaysOn>
+      <joint_name>left_wheel_joint</joint_name>
+      <joint_name>right_wheel_joint</joint_name>
+      <update_rate>100</update_rate>
     </plugin>
   </gazebo>
 
