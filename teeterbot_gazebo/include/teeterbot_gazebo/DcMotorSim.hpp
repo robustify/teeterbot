@@ -14,9 +14,9 @@ namespace teeterbot_gazebo {
 
       void step(double ts, double voltage_in, double load_torque=0) {
         current += ts / MOTOR_PROPS.inductance * (voltage_in - MOTOR_PROPS.resistance * current - MOTOR_PROPS.torque_constant * joint->GetVelocity(0));
-        if (current > MOTOR_PROPS.max_current){
+        if (current > MOTOR_PROPS.max_current) {
           current = MOTOR_PROPS.max_current;
-        }else if (current < -MOTOR_PROPS.max_current){
+        } else if (current < -MOTOR_PROPS.max_current){
           current = -MOTOR_PROPS.max_current;
         }
         joint->SetForce(0, current * MOTOR_PROPS.torque_constant);
