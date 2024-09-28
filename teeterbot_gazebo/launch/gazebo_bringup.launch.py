@@ -9,10 +9,6 @@ from launch_ros.actions import Node
 
 
 def launch_setup(context):
-    sdf_file = LaunchConfiguration('robot_sdf_file').perform(context)
-    with open(sdf_file, 'r') as f:
-        robot_desc = f.read()
-
     verbose_mode_str = LaunchConfiguration('verbose').perform(context)
     verbose_mode = (verbose_mode_str.lower() == 'true')
 
@@ -23,17 +19,6 @@ def launch_setup(context):
         launch_arguments={
             'gz_args': (f'{world_sdf_file} --verbose' if verbose_mode else world_sdf_file)
         }.items()
-    )
-
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='both',
-        parameters=[
-            {'use_sim_time': True},
-            {'robot_description': robot_desc},
-        ]
     )
 
     bridge_config_file = LaunchConfiguration('gz_bridge_file').perform(context)
@@ -51,7 +36,6 @@ def launch_setup(context):
 
 def generate_launch_description():
     return LaunchDescription([
-        DeclareLaunchArgument('robot_sdf_file', default_value='', description='Full path to robot model SDF file'),
         DeclareLaunchArgument('world_sdf_file', default_value='', description='Full path to world SDF file'),
         DeclareLaunchArgument('gz_bridge_file', default_value='', description='Full path to ROS/GZ bridge configuration YAML file'),
         DeclareLaunchArgument('verbose', default_value='false', description='Configure Gazebo to put verbose output on terminal'),

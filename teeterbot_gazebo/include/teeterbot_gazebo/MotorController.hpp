@@ -33,12 +33,13 @@ namespace teeterbot_gazebo {
         ramp_limit(params.ramp_limit), kp(params.kp), ki(params.ki), kd(params.kd)
       {}
 
-      double update(double ts, double cmd, double feedback) {
-        // Reset integrator when target is near zero
-        if (std::abs(target) < 1e-2) {
-          int_val = 0;
-        }
+      void reset() {
+        target = 0.0;
+        last_error = 0.0;
+        int_val = 0.0;
+      }
 
+      double update(double ts, double cmd, double feedback) {
         // Impose ramp limit on target speed
         if ((cmd - target) > (0.5 * ts * this->ramp_limit)) {
           target += ts * this->ramp_limit;

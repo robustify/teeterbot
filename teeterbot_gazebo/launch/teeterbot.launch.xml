@@ -2,8 +2,7 @@
 <launch>
 
     <include file="$(find-pkg-share teeterbot_gazebo)/launch/gazebo_bringup.launch.py">
-        <arg name="robot_sdf_file" value="$(find-pkg-share teeterbot_description)/models/teeterbot/model.sdf" />
-        <arg name="world_sdf_file" value="$(find-pkg-share teeterbot_gazebo)/worlds/teeterbot_training_empty_world.sdf" />
+        <arg name="world_sdf_file" value="$(find-pkg-share teeterbot_gazebo)/worlds/teeterbot_empty_world.sdf" />
         <arg name="gz_bridge_file" value="$(find-pkg-share teeterbot_gazebo)/config/ros_gz_bridge.yaml" />
         <arg name="verbose" value="true" />
     </include>

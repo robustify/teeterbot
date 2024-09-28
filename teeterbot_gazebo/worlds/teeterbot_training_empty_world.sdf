@@ -96,7 +96,7 @@
 
     <model name="teeterbot_training_wheels">
       <self_collide>true</self_collide>
-      <pose>0 0 0 0 0 0</pose>
+      <pose>0 0 0 0 0 1.5707</pose>
       <include merge="true">
         <uri>package://teeterbot_description/models/teeterbot_training_wheels</uri>
       </include>

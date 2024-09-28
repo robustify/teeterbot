@@ -9,19 +9,19 @@ find_package(gz-plugin REQUIRED)
 
 include_directories(include)
 
-# add_library(TeeterbotInterfacePlugin SHARED
-#   src/TeeterbotInterfacePlugin.cpp
-# )
-# target_link_libraries(TeeterbotInterfacePlugin
-#   gz-sim::gz-sim
-#   gz-plugin::register
-# )
+add_library(TeeterbotInterfacePlugin SHARED
+  src/TeeterbotInterfacePlugin.cpp
+)
+target_link_libraries(TeeterbotInterfacePlugin
+  gz-sim::gz-sim
+  gz-plugin::register
+)
 
-# ament_export_libraries(TeeterbotInterfacePlugin)
-# install(
-#   TARGETS TeeterbotInterfacePlugin
-#   DESTINATION lib
-# )
+ament_export_libraries(TeeterbotInterfacePlugin)
+install(
+  TARGETS TeeterbotInterfacePlugin
+  DESTINATION lib
+)
 
 install(
   DIRECTORY
