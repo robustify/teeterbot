@@ -11,13 +11,22 @@ from launch_ros.actions import Node
 def launch_setup(context):
     verbose_mode_str = LaunchConfiguration('verbose').perform(context)
     verbose_mode = (verbose_mode_str.lower() == 'true')
+    start_paused_str = LaunchConfiguration('start_paused').perform(context)
+    start_paused = (start_paused_str.lower() == 'true')
 
-    world_sdf_file = LaunchConfiguration('world_sdf_file').perform(context)
+    gz_arg_str = LaunchConfiguration('world_sdf_file').perform(context)
+
+    if verbose_mode:
+        gz_arg_str += ' --verbose'
+
+    if not start_paused:
+        gz_arg_str += ' -r'
+
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('ros_gz_sim'), 'launch', 'gz_sim.launch.py')),
         launch_arguments={
-            'gz_args': (f'{world_sdf_file} --verbose' if verbose_mode else world_sdf_file)
+            'gz_args': gz_arg_str
         }.items()
     )
 
@@ -39,5 +48,6 @@ def generate_launch_description():
         DeclareLaunchArgument('world_sdf_file', default_value='', description='Full path to world SDF file'),
         DeclareLaunchArgument('gz_bridge_file', default_value='', description='Full path to ROS/GZ bridge configuration YAML file'),
         DeclareLaunchArgument('verbose', default_value='false', description='Configure Gazebo to put verbose output on terminal'),
+        DeclareLaunchArgument('start_paused', default_value='false', description='Start the simulation in paused state'),
         OpaqueFunction(function=launch_setup)
     ])
